@@ -51,7 +51,7 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
         PathNode tempNode = openSet.top();
         openSet.pop();
         //find nearest geometry
-        float sphereTrace = YourSDF(tempNode.pos); //call your distance estimate here
+        float sphereTrace = SDF(tempNode.pos); //call your distance estimate here
         if(sphereTrace < 0.001f) continue;
         //return if clear line of sight
         float dist2Player = length(playerPos - tempNode.pos);
@@ -73,14 +73,14 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
         }
 
         //get surface normal and orthonormal basis
-        vec3 newNormal = YourNormal(newPos, sphereTrace); //call your normal estimate here
+        vec3 newNormal = Normal(newPos, sphereTrace); //call your normal estimate here
         vec3 upVec = (abs(newNormal.y) < 0.99f) ? vec3(0.0f, 1.0f, 0.0f) : vec3(1.0f, 0.0f, 0.0f);
         vec3 t1 = normalize(cross(newNormal, upVec));
         vec3 t2 = cross(newNormal, t1);
         //generate safe offset distance to prevent tunnelling
         float skin = 0.1333f; //must be smaller than radialDist
         vec3 basePos = newPos + skin*newNormal;
-        float baseClearance = YourSDF(basePos); //call your distance estimate here
+        float baseClearance = SDF(basePos); //call your distance estimate here
         if (baseClearance < 1e-3f) continue;
         float offset = min(radialDist, baseClearance - 1e-3f);
 
@@ -93,7 +93,7 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
             //offset position
             vec3 radialPos = basePos + (offset*tangentVec);
             //geometry distance
-            float sphereTrace3 = YourSDF(radialPos); //call your distance estimate here
+            float sphereTrace3 = SDF(radialPos); //call your distance estimate here
             //return if clear path
             //step
             if(sphereTrace3 > 0.001f) { //check if offset intersects or tunnels
