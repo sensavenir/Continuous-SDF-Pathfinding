@@ -55,17 +55,10 @@ PathNode PathFind(vec3 pos, vec3 playerPos, vec3 playerDir) {
         ivec3 key = QuantizePos(newPos, radialDist);
         if(closedSet.find(key) != closedSet.end()) continue;
         closedSet.insert(key);
-        //calculate new player distance
-        float dist2Player = length(playerPos - newPos);
-        //find new geometry
-        sphereTrace = YourSDF(newPos); //call your distance estimate here
+        
         //store trajectory and distance
         tempNode.checkPoints.push_back(newPos);
         tempNode.distTravelled += sphereTrace;
-        //return if clear path
-        if(dist2Player < sphereTrace) {
-            return tempNode;
-        }
 
         //get surface normal and orthonormal basis
         vec3 newNormal = YourNormal(newPos, sphereTrace); //call your normal estimate here
@@ -81,8 +74,7 @@ PathNode PathFind(vec3 pos, vec3 playerPos, vec3 playerDir) {
             vec3 tangentVec = cos(angle) * t1 + sin(angle) * t2;
             //new position
             vec3 radialPos = newPos + radialDist*tangentVec;
-            //dist to player and geometry
-            dist2Player = length(playerPos - radialPos);
+            //geometry distance
             sphereTrace = YourSDF(radialPos); //call your distance estimate
             //step
             if(sphereTrace > 0.001f) {
@@ -97,7 +89,9 @@ PathNode PathFind(vec3 pos, vec3 playerPos, vec3 playerDir) {
                 radialNode.checkPoints.push_back(stepPos);
                 radialNode.distTravelled += tempNode.distTravelled + radialDist + sphereTrace;
                 radialNode.cost = radialNode.distTravelled + (heuristicWeight*(length(playerPos - stepPos))); //euclidean distance heuristic
+                
                 //return if clear path
+                float dist2Player = length(playerPos - radialPos);
                 if(dist2Player < sphereTrace) {
                     return radialNode;
                 }
