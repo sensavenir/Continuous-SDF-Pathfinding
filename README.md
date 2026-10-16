@@ -9,4 +9,6 @@ radialSpokes sets the number of orthogonally offset positions to evaluate at eac
 
 radialDist sets the offset distance;
 
-heuristicWeight adjusts the weighting of the target distance 1 results in the optimal path, higher results in less optimal paths but significantly fewer evaluations
+cellSize sets the size of the pseudogrid, this must be smaller than the radialDist
+
+heuristicWeight adjusts the weighting of the target distance, 1 results in the optimal path, higher results in less optimal paths but significantly fewer evaluations
