@@ -52,7 +52,7 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
         PathNode tempNode = openSet.top();
         openSet.pop();
         //find nearest geometry
-        float sphereTrace = SDF(tempNode.pos); //your SDF
+        float sphereTrace = SDF(tempNode.pos); //call your distance estimate
         if(sphereTrace < 0.001f) continue;
         //return if clear line of sight
         float dist2Player = length(playerPos - tempNode.pos);
