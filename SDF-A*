@@ -34,7 +34,7 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
     int counterMax = 777; //set max evaluation steps
     int radialSpokes = 3; //number of radial offset evaluations per step
     float radialDist = 0.1777f; //set orthogonal offset distance 'pon terrain hit; should be ∼1/2 your minimum desired apertures
-    float cellSize = 0.111f;
+    float cellSize = 0.111f; //must be smaller than radialDist
     float heuristicWeight = 1.333f; //set target weight (typically between 1-2); 1 is optimal, higher results in less optimal paths but significantly fewer evaluations
 
     std::priority_queue<PathNode, std::vector<PathNode>, CompareNode> openSet;
