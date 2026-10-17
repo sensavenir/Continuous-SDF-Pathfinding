@@ -1,11 +1,33 @@
+struct Vec3Hash {
+    size_t operator()(const ivec3& v) const {
+        return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1) ^ (std::hash<int>()(v.z) << 2);
+    }
+};
+
+struct PathNode {
+    std::vector<vec3> checkPoints = {};
+    vec3 pos = vec3(0.0f);
+    float cost = 0.0f;
+    float distTravelled = 0.0f;
+};
+
+struct CompareNode {
+    bool operator()(const PathNode& a, const PathNode& b) const {
+        return a.cost > b.cost;
+    }
+};
+
+ivec3 QuantizePos(vec3 pos, float cellSize) {
+    return ivec3(floor(pos.x / cellSize), floor(pos.y / cellSize), floor(pos.z / cellSize));
+}
 
 PathNode PathFind(vec3 pos, vec3 playerPos) {
     int counter = 0;
     int counterMax = 777; //set max evaluation steps
-    int radialSpokes = 4; //number of radial offset evaluations per step
+    int radialSpokes = 3; //number of radial offset evaluations per step
     float radialDist = 0.1777f; //set orthogonal offset distance 'pon terrain hit; should be ∼1/2 your minimum desired apertures
-    float cellSize = 0.111f; //must be smaller than radialDist
-    float heuristicWeight = 1.777f; //set target weight (typically between 1-2); 1 is optimal, higher results in less optimal paths but significantly fewer evaluations
+    float cellSize = 0.111f;
+    float heuristicWeight = 1.333f; //set target weight (typically between 1-2); 1 is optimal, higher results in less optimal paths but significantly fewer evaluations
 
     std::priority_queue<PathNode, std::vector<PathNode>, CompareNode> openSet;
     std::unordered_set<ivec3, Vec3Hash> closedSet;
@@ -22,7 +44,7 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
         PathNode tempNode = openSet.top();
         openSet.pop();
         //find nearest geometry
-        float sphereTrace = SDF(tempNode.pos);
+        float sphereTrace = MulticellularGeometry(tempNode.pos);
         if(sphereTrace < 0.001f) continue;
         //return if clear line of sight
         float dist2Player = length(playerPos - tempNode.pos);
@@ -35,7 +57,7 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
         //store trajectory and distance
         tempNode.pos = newPos;
         tempNode.checkPoints.push_back(newPos);
-        tempNode.distTravelled += 0.9f*sphereTrace;
+        tempNode.distTravelled += 0.9f*sphereTrace; //conservative step
         //check if zone already trammelled 'pon
         ivec3 parentKey = QuantizePos(newPos, cellSize);
         if (closedSet.insert(parentKey).second) {
@@ -44,18 +66,18 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
         }
 
         //get surface normal and orthonormal basis
-        vec3 newNormal = Normal(newPos, sphereTrace); //call your normal estimate here
+        vec3 newNormal = BeastNormal(newPos, sphereTrace); //call your normal estimate here
         vec3 upVec = (abs(newNormal.y) < 0.99f) ? vec3(0.0f, 1.0f, 0.0f) : vec3(1.0f, 0.0f, 0.0f);
         vec3 t1 = normalize(cross(newNormal, upVec));
         vec3 t2 = cross(newNormal, t1);
         //Lipschitz safe clearance away from geometry
         float liftTarget = 0.333f;
-        liftTarget = min(liftTarget, 0.0777f*sphereTrace);
+        liftTarget = min(liftTarget, 0.0777f*sphereTrace); //conservative step within remaining Lipschitz bound
         vec3 wallLift = liftTarget*newNormal;
         vec3 basePos = newPos + wallLift;
         //generate safe offset to prevent tunnelling
-        float newClearance = SDF(basePos);
-        if(newClearance < 0.0333f) continue; 
+        float newClearance = MulticellularGeometry(basePos);
+        if(newClearance <= 0.0333f) continue; 
         float offset = min(radialDist, newClearance - 0.0333f);
         //evaluate offset positions
         for(int i = 1; i <= radialSpokes; i++) {
@@ -66,19 +88,11 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
             //offset position
             vec3 radialPos = basePos + (offset*tangentVec);
             //geometry distance
-            float sphereTrace3 = SDF(radialPos); //call your distance estimate
+            float sphereTrace3 = MulticellularGeometry(radialPos); //call your distance estimate
             //return if clear path
             //step 
             if(sphereTrace3 > 0.01f) {
-                //step safe distance towards target
-                vec3 stepPos = radialPos + 0.9f*sphereTrace3*normalize(playerPos - radialPos);                
-                //check if zone already trammelled 'pon
-                ivec3 childKey = QuantizePos(stepPos, cellSize);
-                if(closedSet.find(childKey) != closedSet.end()) continue;
-                closedSet.insert(childKey);
-                //create node and store trajectory, distance, cost
-                //ibid. ancestor node's
-                PathNode radialNode;
+                //return if clear path
                 float dist3Player = length(playerPos - radialPos);
                 if(dist3Player < sphereTrace3) {
                     radialNode = tempNode; 
@@ -87,8 +101,18 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
                     radialNode.checkPoints.push_back(playerPos);
                     return radialNode;
                 }
+                //step safe distance towards target
+                vec3 stepPos = radialPos + 0.9f*sphereTrace3*normalize(playerPos - radialPos);   
+                //check if zone already trammelled 'pon
+                ivec3 childKey = QuantizePos(stepPos, cellSize);
+                if(closedSet.find(childKey) != closedSet.end()) continue;
+                closedSet.insert(childKey);
+                //create node and store trajectory, distance, cost
+                //ibid. ancestor node's
+                PathNode radialNode;
                 radialNode.pos = stepPos;
                 radialNode.checkPoints = tempNode.checkPoints;
+                radialNode.checkPoints.push_back(basePos);
                 radialNode.checkPoints.push_back(radialPos);
                 radialNode.checkPoints.push_back(stepPos);
                 radialNode.distTravelled = tempNode.distTravelled + offset + (0.9f*sphereTrace3);
