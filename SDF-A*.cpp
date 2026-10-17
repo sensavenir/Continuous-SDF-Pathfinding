@@ -78,7 +78,7 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
         vec3 t1 = normalize(cross(newNormal, upVec));
         vec3 t2 = cross(newNormal, t1);
         //generate safe offset distance to prevent tunnelling
-        float skin = 0.1333f; //must be smaller than radialDist
+        float wallLift = cellSize*2.22f;
         vec3 basePos = newPos + skin*newNormal;
         float baseClearance = SDF(basePos); //call your distance estimate here
         if (baseClearance < 1e-3f) continue;
