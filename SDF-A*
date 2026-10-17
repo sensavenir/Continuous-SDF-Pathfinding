@@ -1,3 +1,11 @@
+#include <unordered_set>
+#include <queue>
+#include <vector>
+
+#include "glm/glm.hpp" 
+#include "glm/ext.hpp"
+using namespace glm;
+
 struct Vec3Hash {
     size_t operator()(const ivec3& v) const {
         return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1) ^ (std::hash<int>()(v.z) << 2);
