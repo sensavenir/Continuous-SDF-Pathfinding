@@ -1,3 +1,4 @@
+
 PathNode PathFind(vec3 pos, vec3 playerPos) {
     int counter = 0;
     int counterMax = 777; //set max evaluation steps
@@ -48,7 +49,9 @@ PathNode PathFind(vec3 pos, vec3 playerPos) {
         vec3 t1 = normalize(cross(newNormal, upVec));
         vec3 t2 = cross(newNormal, t1);
         //Lipschitz safe clearance away from geometry
-        vec3 wallLift = 0.1f*sphereTrace*newNormal;
+        float liftTarget = 0.333f;
+        liftTarget = min(liftTarget, 0.0777f*sphereTrace);
+        vec3 wallLift = liftTarget*newNormal;
         vec3 basePos = newPos + wallLift;
         //generate safe offset to prevent tunnelling
         float newClearance = MulticellularGeometry(basePos);
