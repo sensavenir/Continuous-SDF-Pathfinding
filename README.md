@@ -6,7 +6,7 @@ and eNA2RATA Sentinels, and seems to work reasonably well. The rough flow is:
 1. sphere trace from origin
 2. step safe distance towards player
 3. store this node, generate radial spokes
-4. sphere trace from offset spoke positions, step safe distance
+4. sphere trace from offset spoke positions, step safe distance, store node
 5. repeat using lowest cost node according to conventional A* pathfinding
 
 with some additional refinements and workarounds.
